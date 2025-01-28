@@ -1,0 +1,2 @@
+# xmrig
+How to 
