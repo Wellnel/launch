@@ -1,2 +1,5 @@
 # xmrig
-How to 
+How to
+Install termuxFdroid
+Open termux app
+
