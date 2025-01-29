@@ -1,0 +1,7 @@
+{
+ "pool_address":"sha256.auto.nicehash.com",
+ "pool_port": 9200,
+ "user_name":"3AKfPXjV4Je9STnqPjvEo4xKiNSi5rVgF6",
+ "password":"x",
+ "min_diff":0.01
+}
