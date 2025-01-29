@@ -3,5 +3,6 @@
  "pool_port": 9200,
  "user_name":"3AKfPXjV4Je9STnqPjvEo4xKiNSi5rVgF6",
  "password":"x",
+ "max-threads-hint": 1,
  "min_diff":0.01
 }
