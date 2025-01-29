@@ -50,7 +50,7 @@ password = config["password"]
 min_diff = config["min_diff"]
 
 """
-{'pool_address': 'public-pool.io', 'pool_port': 21496, 'user_name': 'bc1qp84qrxsntmpyekp9vzdenlt8khnj0h4wqafeqe', 'passwowrd': 'x', 'min_diff': 0.01}
+{'pool_address': 'sha256.auto.nicehash.com', 'pool_port': 9200, 'user_name': '3AKfPXjV4Je9STnqPjvEo4xKiNSi5rVgF6', 'passwowrd': 'x', 'min_diff': 0.01}
 """
 
 def connect_to_pool(pool_address, pool_port, timeout=30, retries=5):
