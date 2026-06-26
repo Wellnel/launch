@@ -1,13 +1,22 @@
-# launch
-How to
+# ⚡ DuoGuard SOC & Mining Matrix v2.0 (2026) ⚡
 
-Install termuxFdroid
+Sistem integrasi gandingan pelombong kripto Monero (XMR) berprestasi tinggi bersama ejen kawalan integriti keselamatan siber peribadi (SOC) di persekitaran Android Termux.
 
-Open termux app
+---
 
-pkg install git -y && git clone https://github.com/Wellnel/launch.git && cd launch && bash run.sh
+## 📂 Struktur Direktori ~/launch
 
-to edit 
-nano config.json or
+*   **`config.json`**: Fail konfigurasi XMRig yang dioptimumkan (4 Cores, TLS Enkripsi Port 443, Mod Latar Belakang).
+*   **`duoguard_hashes.json`**: Pangkalan data rujukan SHA-256 untuk mengunci integriti fail kritikal.
+*   **`fim_sentinel_v2.py`**: Skrip File Integrity Monitor yang meronda setiap 5 saat dan terhubung ke Telegram Bot.
+*   **`dashboard.py`**: Pelayan web mini Flask untuk memaparkan grafik konsol bertema siber secara masa nyata.
+*   **`cert.pem` & `cert_key.pem`**: Sijil keselamatan kriptografi TLS.
+*   **`run.sh`**: Skrip pembuka/peluncur utama.
 
-./launch -o $POOL:$PORT -u $MYADDRESS --tls --coin $COINNAME -t 1
+---
+
+## 🚀 Cara Meluncurkan Sistem (Langkah demi Langkah)
+
+Pastikan anda berada di dalam folder induk sebelum memulakan mana-mana modul:
+```bash
+cd ~/launch
