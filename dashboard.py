@@ -5,6 +5,12 @@ import requests
 import threading
 from datetime import datetime
 
+# Daripada: TELEGRAM_TOKEN = "12345:ABCDE"
+# Gunakan ini:
+TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
+MINER_POOL = os.environ.get('MINER_POOL', 'pool.hashvault.pro')
+
+
 app = Flask(__name__)
 
 # Pembolehubah global untuk menyimpan data sementara dalam memori server
@@ -173,3 +179,9 @@ threading.Thread(target=loop_bot_emas, daemon=True).start()
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
+
+# Tambahkan ini di hujung dashboard.py untuk ujian
+if __name__ == "__main__":
+    print(f"Token Telegram yang dikesan: {TELEGRAM_TOKEN}")
+    print(f"Pool Miner yang digunakan: {MINER_POOL}")
+    # Anda boleh jalankan 'python dashboard.py' di Termux untuk lihat output ini
