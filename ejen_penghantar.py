@@ -5,7 +5,7 @@ import requests
 
 # Buat masa ini kita uji secara lokal dahulu (127.0.0.1)
 # Nanti bila sudah host di Render, tukar URL ini ke pautan Render bos!
-URL_SERVER_AWAN = "https://duoguard-matrix.onrender.com/api/update"
+URL_SERVER_AWAN = "http://127.0.0.1:5000/api/update"
 def ambil_data_lokal():
     if os.path.exists("duoguard_hashes.json"):
         try:
