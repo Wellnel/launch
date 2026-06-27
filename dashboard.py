@@ -1,5 +1,9 @@
 from flask import Flask, render_template_string, jsonify, request
 import os
+import time
+import requests
+import threading
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -31,7 +35,6 @@ HTML_TEMPLATE = """
         .footer { text-align: center; margin-top: 30px; font-size: 11px; color: #888; }
     </style>
     <script>
-        // Auto-refresh halaman setiap 3 saat untuk menarik data live dari API awan
         setInterval(function() {
             fetch('/api/status')
                 .then(response => response.json())
@@ -68,7 +71,7 @@ HTML_TEMPLATE = """
             <div class="card">
                 <h2>🛡️ Sentinel Cloud Link</h2>
                 <p>Modul: <span>File Integrity Sync</span></p>
-                <p>Status Gerbang: <span class="status-ok">MENUNGGU DATA API</span></p>
+                <p>Status Gerbang: <span class="status-ok">ONLINE (HYBRID MODE)</span></p>
                 <p>Notifikasi: <span style="color: #00ffff;">Telegram Active</span></p>
             </div>
         </div>
@@ -84,13 +87,12 @@ HTML_TEMPLATE = """
                     </tr>
                 </thead>
                 <tbody id="soc-table">
-                    <!-- Data akan dimasukkan secara dinamik oleh JavaScript -->
                 </tbody>
             </table>
         </div>
 
         <div class="footer">
-            DuoGuard SOC v3.0 [Cloud Edition] - Monitoring from Anywhere.
+            DuoGuard SOC v3.0 [Hybrid Cloud Edition] - Trading Bot Embedded.
         </div>
     </div>
 </body>
@@ -101,22 +103,73 @@ HTML_TEMPLATE = """
 def home():
     return render_template_string(HTML_TEMPLATE)
 
-# API Endpoint untuk pelayar web membaca data
 @app.route('/api/status', methods=['GET'])
 def get_status():
     return jsonify(DATA_MATRIX_GLOBAL)
 
-# API Endpoint BAHARU untuk menerima data POST daripada Termux telefon bos
 @app.route('/api/update', methods=['POST'])
 def update_status():
     data_terima = request.json
     if data_terima:
         DATA_MATRIX_GLOBAL['soc'] = data_terima.get('soc', {})
         DATA_MATRIX_GLOBAL['miner_status'] = data_terima.get('miner_status', 'RUNNING')
-        return jsonify({"status": "SUCCESS", "message": "Data berjaya dikemas kini di awan!"}), 200
+        return jsonify({"status": "SUCCESS", "message": "Data berjaya dikemas kini!"}), 200
     return jsonify({"status": "ERROR", "message": "Tiada data dikesan"}), 400
 
+# =====================================================================
+# ⚙️ LOGIK BOT EMAS BINANCE (DIJALANKAN DI BELAKANG TAB / BACKGROUND)
+# =====================================================================
+TOKEN = "7964651809:AAFXMrLDM2d5A6hAYpsisIZguIDnJvvfFWU"
+CHAT_ID = "6065278352"
+
+def hantar_mesej(teks):
+    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+    payload = {"chat_id": CHAT_ID, "text": teks}
+    try:
+        requests.post(url, json=payload, timeout=10)
+    except Exception as e:
+        print("Gagal hantar Telegram:", e)
+
+def ambil_data_binance():
+    try:
+        url = "https://api1.binance.com/api/v3/ticker/price?symbol=PAXGUSDT"
+        respons = requests.get(url, timeout=10).json()
+        harga = round(float(respons['price']), 2)
+        return harga
+    except Exception as e:
+        print("Gagal ambil data Binance:", e)
+        return None
+
+def loop_bot_emas():
+    hantar_mesej("🚀 Bot Emas Hybrid Render Aktif!\nSistem Port-Bypassed bersama Dashboard berjaya dimulakan.")
+    status_terakhir = None
+    
+    while True:
+        try:
+            harga_sekarang = ambil_data_binance()
+            if harga_sekarang:
+                lantai = round(harga_sekarang - 25, 2)
+                atap = round(harga_sekarang + 25, 2)
+                waktu_sekarang = datetime.now().strftime('%H:%M:%S')
+                print(f"[{waktu_sekarang}] Binance PAXG: ${harga_sekarang} | L: ${lantai} | A: ${atap}")
+                
+                if harga_sekarang >= atap and status_terakhir != "SELL":
+                    hantar_mesej(f"🔴 SIGNAL SELL (Binance)\n\nPrice: ${harga_sekarang}\n🛑 SL: {round(harga_sekarang+15,2)}\n🎯 TP: {round(harga_sekarang-30,2)}")
+                    status_terakhir = "SELL"
+                elif harga_sekarang <= lantai and status_terakhir != "BUY":
+                    hantar_mesej(f"🟢 SIGNAL BUY (Binance)\n\nPrice: ${harga_sekarang}\n🛑 SL: {round(harga_sekarang-15,2)}\n🎯 TP: {round(harga_sekarang+30,2)}")
+                    status_terakhir = "BUY"
+                if lantai < harga_sekarang < atap:
+                    status_terakhir = None
+        except Exception as e:
+            print("Error Loop Bot:", e)
+        time.sleep(60)
+
+# 🔥 TRIGGER: Hidupkan bot emas secara berasingan supaya tidak mengganggu port Flask
+threading.Thread(target=loop_bot_emas, daemon=True).start()
+
+# =====================================================================
+
 if __name__ == '__main__':
-    # Server akan mendengar di port 5000 (Sesuai untuk lokal & cloud)
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
