@@ -1,0 +1,5 @@
+cert_key.pem
+config.json
+*.log
+__pycache__/
+.env
