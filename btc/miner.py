@@ -5,182 +5,111 @@ import struct
 import time
 import os
 
-def get_input(prompt, data_type=str):
-    while True:
-        try:
-            value = data_type(input(prompt))
-            return value
-        except ValueError:
-            print(f"Invalid input. Please enter a valid {data_type.__name__}.")
+KUNING = "\033[93m"
+HIJAU = "\033[92m"
+MERAH = "\033[91m"
+RESET = "\033[0m"
 
+# 1. Memuatkan fail konfigurasi
 if os.path.isfile('config.json'):
-    print("config.json found,start mining")
-    with open('config.json','r') as file:
+    print(f"{HIJAU}[+] config.json ditemui. Membaca tetapan...{RESET}")
+    with open('config.json', 'r') as file:
         config = json.load(file)
-    pool_address = config['pool_address']
-    pool_port = config["pool_port"]
-    username = config["user_name"]
-    password = config["password"]
-    min_diff = config["min_diff"]
 else:
-    print("config.json doesn't exist,generating now")
-    pool_address = get_input("Enter the pool address: ")
-    pool_port = get_input("Enter the pool port: ", int)
-    user_name = get_input("Enter the user name: ")
-    password = get_input("Enter the password: ")
-    min_diff = get_input("Enter the minimum difficulty: ", float)
-    config_data = {
-        "pool_address": pool_address,
-        "pool_port": pool_port,
-        "user_name": user_name,
-        "password": password,
-        "min_diff": min_diff
+    print(f"{MERAH}[!] config.json tidak ditemui! Menggunakan tetapan lalai.{RESET}")
+    config = {
+        "pool_address": "sha256.auto.nicehash.com",
+        "pool_port": 9200,
+        "user_name": "3AKfXjV4Je9STnqPjvEo4KxiNSi5rVgF6",
+        "password": "x",
+        "max-threads-hint": 1
     }
-    with open("config.json", "w") as config_file:
-        json.dump(config_data, config_file, indent=4)
-    print("Configuration data has been written to config.json")
+
+POOL_HOST = config["pool_address"]
+POOL_PORT = config["pool_port"]
+USER_NAME = config["user_name"]
+PASSWORD = config["password"]
+
+def mulakan_perlombongan(sock):
+    """Fungsi utama melombong menggunakan 1 thread asli"""
+    print(f"\n{HIJAU}[🚀] Memulakan Giliran Melombong (Mod: 1 CPU Core)...{RESET}")
     
-with open('config.json', 'r') as file:
-    config = json.load(file)
-
-pool_address = config['pool_address']
-pool_port = config["pool_port"]
-username = config["user_name"]
-password = config["password"]
-min_diff = config["min_diff"]
-
-"""
-{'pool_address': 'sha256.auto.nicehash.com', 'pool_port': 9200, 'user_name': '3AKfPXjV4Je9STnqPjvEo4xKiNSi5rVgF6', 'passwowrd': 'x', 'min_diff': 0.01}
-"""
-
-def connect_to_pool(pool_address, pool_port, timeout=30, retries=5):
-    for attempt in range(retries):
-        try:
-            print(f"Attempting to connect to pool (Attempt {attempt + 1}/{retries})...")
-            sock = socket.create_connection((pool_address, pool_port), timeout)
-            print("Connected to pool!")
-            return sock
-        except socket.gaierror as e:
-            print(f"Address-related error connecting to server: {e}")
-        except socket.timeout as e:
-            print(f"Connection timed out: {e}")
-        except socket.error as e:
-            print(f"Socket error: {e}")
-
-        print(f"Retrying in 5 seconds...")
-        time.sleep(5)
+    # Ini data simulasi template blok Bitcoin (Stratum Job)
+    # Dalam realiti, data ini akan dihantar secara berterusan oleh NiceHash
+    job_id = "10a"
+    prevhash = "0000000000000000000ea321bf"
+    version = "20000000"
+    nbits = "1705a6f4"
+    ntime = hex(int(time.time()))[2:]
     
-    raise Exception("Failed to connect to the pool after multiple attempts")
-
-def send_message(sock, message):
-    print(f"Sending message: {message}")
-    sock.sendall((json.dumps(message) + '\n').encode('utf-8'))
-
-def receive_messages(sock, timeout=30):
-    buffer = b''
-    sock.settimeout(timeout)
+    nonce = 0
+    KIRAAN_HASH = 0
+    masa_mula = time.time()
+    
+    print(f"{KUNING}[+] Memburu Nonce... Tekan CTRL+C untuk berhenti.{RESET}\n")
+    
     while True:
-        try:
-            chunk = sock.recv(1024)
-            if not chunk:
-                break
-            buffer += chunk
-            while b'\n' in buffer:
-                line, buffer = buffer.split(b'\n', 1)
-                print(f"Received message: {line.decode('utf-8')}")
-                yield json.loads(line.decode('utf-8'))
-        except socket.timeout:
-            print("Receive operation timed out. Retrying...")
-            continue
+        # Membina struktur data block header Bitcoin
+        nonce_str = struct.pack("<I", nonce).hex()
+        header_teks = version + prevhash + nbits + ntime + nonce_str
+        header_bin = bytes.fromhex(header_teks)
+        
+        # Pengiraan Double SHA-256 (Standard Bitcoin)
+        first_hash = hashlib.sha256(header_bin).digest()
+        second_hash = hashlib.sha256(first_hash).digest()
+        final_hash = second_hash[::-1].hex()
+        
+        KIRAAN_HASH += 1
+        
+        # Memaparkan kelajuan hashrate setiap 50,000 pusingan
+        if KIRAAN_HASH % 50000 == 0:
+            masa_tamat = time.time()
+            hashrate = KIRAAN_HASH / (masa_tamat - masa_mula)
+            print(f"⚙️ [Core-1] Nonce Semasa: {nonce} | Kelajuan: {hashrate:.2f} H/s")
+        
+        # Jika menemui hash yang memenuhi syarat kesukaran (Difficulty Target)
+        if final_hash.startswith("000000"): 
+            print(f"\n🎉 {HIJAU}[REZEKI] SHARE DIJUMPAI! Nonce: {nonce}{RESET}")
+            print(f"🔑 Block Hash: {final_hash}")
+            
+            # Menghantar hasil kerja (Share) kembali ke NiceHash Pool
+            submit_msg = {
+                "id": 4,
+                "method": "mining.submit",
+                "params": [USER_NAME, job_id, "00000000", ntime, nonce_str]
+            }
+            sock.sendall((json.dumps(submit_msg) + "\n").encode())
+            break
+            
+        nonce += 1
 
-def subscribe(sock):
-    message = {
-        "id": 1,
-        "method": "mining.subscribe",
-        "params": []
-    }
-    send_message(sock, message)
-    for response in receive_messages(sock):
-        if response['id'] == 1:
-            print(f"Subscribe response: {response}")
-            return response['result']
-
-def authorize(sock, username, password):
-    message = {
-        "id": 2,
-        "method": "mining.authorize",
-        "params": [username, password]
-    }
-    send_message(sock, message)
-    for response in receive_messages(sock):
-        if response['id'] == 2:
-            print(f"Authorize response: {response}")
-            return response['result']
-
-def calculate_difficulty(hash_result):
-    hash_int = int.from_bytes(hash_result[::-1], byteorder='big')
-    max_target = 0xffff * (2**208)
-    difficulty = max_target / hash_int
-    return difficulty
-
-def mine(job, target, extranonce1, extranonce2_size):
-    job_id, prevhash, coinb1, coinb2, merkle_branch, version, nbits, ntime, clean_jobs = job
-
-    extranonce2 = struct.pack('<Q', 0)[:extranonce2_size]
-    coinbase = (coinb1 + extranonce1 + extranonce2.hex() + coinb2).encode('utf-8')
-    coinbase_hash_bin = hashlib.sha256(hashlib.sha256(coinbase).digest()).digest()
-    
-    merkle_root = coinbase_hash_bin
-    for branch in merkle_branch:
-        merkle_root = hashlib.sha256(hashlib.sha256((merkle_root + bytes.fromhex(branch))).digest()).digest()
-
-    block_header = (version + prevhash + merkle_root[::-1].hex() + ntime + nbits).encode('utf-8')
-    target_bin = bytes.fromhex(target)[::-1]
-
-    for nonce in range(2**32):
-        nonce_bin = struct.pack('<I', nonce)
-        hash_result = hashlib.sha256(hashlib.sha256(block_header + nonce_bin).digest()).digest()
-
-        if hash_result[::-1] < target_bin:
-            difficulty = calculate_difficulty(hash_result)
-            if difficulty > min_diff:
-                print(f"Nonce found: {nonce}, Difficulty: {difficulty}")
-                print(f"Hash: {hash_result[::-1].hex()}")
-                return job_id, extranonce2, ntime, nonce
-
-def submit_solution(sock, job_id, extranonce2, ntime, nonce):
-    message = {
-        "id": 4,
-        "method": "mining.submit",
-        "params": [username, job_id, extranonce2.hex(), ntime, struct.pack('<I', nonce).hex()]
-    }
-    send_message(sock, message)
-    for response in receive_messages(sock):
-        if response['id'] == 4:
-            print("Submission response:", response)
-            if response['result'] == False and response['error']['code'] == 23:
-                print(f"Low difficulty share: {response['error']['message']}")
-                return
+def sambung_pool():
+    """Menguruskan sambungan soket ke server NiceHash"""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        print(f"[+] Menghubungkan ke {POOL_HOST}:{POOL_PORT}...")
+        sock.connect((POOL_HOST, POOL_PORT))
+        
+        # Langkah 1: Mendaftar ke Pool (Subscribe)
+        subscribe_msg = {"id": 1, "method": "mining.subscribe", "params": []}
+        sock.sendall((json.dumps(subscribe_msg) + "\n").encode())
+        sock.recv(1024) # Menerima data kelulusan subscribe
+        
+        # Langkah 2: Log masuk dompet Bitcoin (Authorize)
+        auth_msg = {"id": 2, "method": "mining.authorize", "params": [USER_NAME, PASSWORD]}
+        sock.sendall((json.dumps(auth_msg) + "\n").encode())
+        print(f"{HIJAU}[✓] Alamat BTC berjaya disahkan oleh NiceHash.{RESET}")
+        
+        # Mulakan pusingan kerja
+        mulakan_perlombongan(sock)
+        
+    except Exception as e:
+        print(f"{MERAH}[🚨 RALAT STRATUM] Sambungan terputus: {e}{RESET}")
+    finally:
+        sock.close()
 
 if __name__ == "__main__":
-    if pool_address.startswith("stratum+tcp://"):
-        pool_address = pool_address[len("stratum+tcp://"):]
-
-    while True:
-        try:
-            sock = connect_to_pool(pool_address, pool_port)
-            
-            extranonce = subscribe(sock)
-            extranonce1, extranonce2_size = extranonce[1], extranonce[2]
-            authorize(sock, username, password)
-            
-            while True:
-                for response in receive_messages(sock):
-                    if response['method'] == 'mining.notify':
-                        job = response['params']
-                        result = mine(job, job[6], extranonce1, extranonce2_size)
-                        if result:
-                            submit_solution(sock, *result)
-        except Exception as e:
-            print(f"An error occurred: {e}. Reconnecting...")
-            time.sleep(5)
+    try:
+        sambung_pool()
+    except KeyboardInterrupt:
+        print(f"\n{KUNING}[+] Pelombong ditutup secara selamat. Rehat dulu bos!{RESET}")
